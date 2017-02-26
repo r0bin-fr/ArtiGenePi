@@ -56,7 +56,8 @@ class TaskPrintTemp(threading.Thread):
 				self.p.disconnect()
 
 		#wait 1 second before try again
-		self._stopevent.wait(1) 
+		if(not self._stopevent.isSet()):
+			self._stopevent.wait(1) 
 
 
     def read(self):
