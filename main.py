@@ -1,24 +1,31 @@
 import readBT
 import multithreadBT
+import multithreadServeur
+import SSRControl
 import time
 import sys
 import signal
-import socket
+import gaugette.rotary_encoder as RE
+import gaugette.gpio as GG
 
-#server values
-HOST = ''        # Symbolic name meaning all available interfaces
-PORT = 60016              # Arbitrary non-privileged port
-conn = 0
 
 # global values for data handling
 maximT = readBT.BTData(0)
 taskT = multithreadBT.TaskPrintTemp(maximT)
+taskS = multithreadServeur.TaskServeur(maximT)
 done = False
+
+#encoder data
+powval = 50
+A_PIN = 9
+B_PIN = 7
 
 #how to quit application nicely
 def quitApplicationNicely():
 	done = True
 	taskT.stop()
+	taskS.stop()
+	SSRControl.setBoilerPWM(0)
 	time.sleep(0.1)
         sys.exit(0)
 
@@ -31,46 +38,33 @@ def signal_handler(signal, frame):
 signal.signal(signal.SIGINT, signal_handler)
 
 
-#start BT task
+#start tasks
 taskT.start()
+taskS.start()
 
-# -------- Main Program Loop 1 -----------
-while not done:
-	s = 0
-	print("Main loop1 - start server")
-	#listen to socket
-	try:
-		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-		s.bind((HOST, PORT))
-		s.listen(1)
-		break;		
-	except socket.error as e:
-		print "Main loop1 - Socket error : {0}".format(e)		
-		if s != 0:
-			s.close()
-	#wait 1 second before new attempt
-	time.sleep(1)
+#encoder settings
+gpio = GG.GPIO()
+encoder = RE.RotaryEncoder(gpio, A_PIN, B_PIN)
+encoder.start()
 
-# -------- Main Program Loop 2 -----------
-while not done:	
-	conn = 0
-	print("Main loop2 - now listening")
+# -------- Main Program: check encoder settings  -----------
+while True:
+	#encoder read
+	delta = encoder.get_steps()
+	#did we turn the encoder?
+      	if delta!=0:
+		#compute new power value
+        	#print "rotate %d" % delta
+        	powval = powval + (2 * delta)
+        	if powval > 100:
+                	powval = 100
+        	if powval < 0:
+                	powval = 0
+        	print "New power value= %d" % powval
+		#update PWM to SSR
+		SSRControl.setBoilerPWM(powval)		
+      	else:
+        	time.sleep(0.1)
 
-	try:
-		conn, addr = s.accept()
-		print 'Main loop2 - connected by', addr
-
-		#send temperature once and disconnect
-		btemp = maximT.getTempL()  
-		atemp = maximT.getTempH()  
-		conn.sendall(str(atemp)+","+str(btemp))
-
-	except socket.error as e:
-		print "Main loop2 - Socket error : {0}".format(e)		
-	finally:
-		if conn != 0:
-			print "Main loop2 - close socket"
-			conn.close()
 
 
