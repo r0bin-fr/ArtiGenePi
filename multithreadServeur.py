@@ -45,21 +45,21 @@ class TaskServeur(threading.Thread):
 	# --------  Program Loop 2 -----------
 	while not self._stopevent.isSet(): 
 	        self.conn = 0
-        	print("TaskServer loop2 - now listening")
+        	#print("TaskServer loop2 - now listening")
 
         	try:
                 	self.conn, addr = self.s.accept()
-                	print 'TaskServer loop2 - connected by', addr
+                	#print 'TaskServer loop2 - connected by', addr
                 	#send temperature once and disconnect
                 	btemp = self.mData.getTempL()
                 	atemp = self.mData.getTempH()
-                	conn.sendall(str(atemp)+","+str(btemp))
+                	self.conn.sendall(str(atemp)+","+str(btemp))
 
 	        except socket.error as e:
         	        print "TaskServer loop2 - Socket error : {0}".format(e)
         	finally:
                 	if self.conn != 0:
-                        	print "TaskServer loop2 - close socket"
+                        	#print "TaskServer loop2 - close socket"
                         	self.conn.close()
 
     def stop(self): 

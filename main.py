@@ -17,14 +17,14 @@ done = False
 
 #encoder data
 powval = 50
-A_PIN = 9
-B_PIN = 7
+A_PIN = 7
+B_PIN = 9
 
 #how to quit application nicely
 def quitApplicationNicely():
 	done = True
-	taskT.stop()
 	taskS.stop()
+	taskT.stop()
 	SSRControl.setBoilerPWM(0)
 	time.sleep(0.1)
         sys.exit(0)
@@ -36,7 +36,6 @@ def signal_handler(signal, frame):
 
 #intercept control c for nice quit
 signal.signal(signal.SIGINT, signal_handler)
-
 
 #start tasks
 taskT.start()

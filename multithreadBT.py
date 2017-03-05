@@ -18,6 +18,8 @@ class TaskPrintTemp(threading.Thread):
 	self.mData = mData
 	self.p = 0
 	self.cht = 0
+	self.chtmin = 0
+	self.chtmax = 0
 	self.chb = 0
 	self.previousT = time.time()
 	self.interval = 0.5
@@ -29,8 +31,10 @@ class TaskPrintTemp(threading.Thread):
 
     def connect(self):
 	#UUID where temp is stored
-	temp_uuid = UUID(0x0021)
-	batt_uuid = UUID(0x0022)
+	tempc_uuid = UUID(0x0021)
+	tempmin_uuid = UUID(0x0022)
+	tempmax_uuid = UUID(0x0023)
+	batt_uuid = UUID(0x0024)
 	isBTNOK = 1
 
 	#connection...
@@ -41,7 +45,9 @@ class TaskPrintTemp(threading.Thread):
 			self.p = Peripheral("E9:76:C8:5D:FB:24", "random")
 
     			print("OK!\ngetCharacteristics")
-    			self.cht = self.p.getCharacteristics(uuid=temp_uuid)[0]
+    			self.cht = self.p.getCharacteristics(uuid=tempc_uuid)[0]
+    			self.chtmin = self.p.getCharacteristics(uuid=tempmin_uuid)[0]
+    			self.chtmax = self.p.getCharacteristics(uuid=tempmax_uuid)[0]
 			self.chb = self.p.getCharacteristics(uuid=batt_uuid)[0]
 			isBTNOK = 0
 
@@ -59,22 +65,31 @@ class TaskPrintTemp(threading.Thread):
 		if(not self._stopevent.isSet()):
 			self._stopevent.wait(1) 
 
+    #extract float data from BLE struct
+    def extractBLEval(self,data):
+	val = binascii.b2a_hex(data)
+        val = binascii.unhexlify(val)
+        val = struct.unpack('f', val)[0]
+        return float(val)
+
 
     def read(self):
 	#read loop
         while not self._stopevent.isSet():
                 try:
-			vv=self.cht.read()
-			ww=self.chb.read()
-
+			tc=self.extractBLEval(self.cht.read())
+			tmi=self.extractBLEval(self.chtmin.read())
+			tma=self.extractBLEval(self.chtmax.read())
+			bat=self.extractBLEval(self.chb.read())
+			
 			#gather battery percent
-                	val = binascii.b2a_hex(ww)
-                	val = binascii.unhexlify(val)
-                	val = struct.unpack('f', val)[0]
-			print "Batt=",float(val),"%"
-			self.batt = float(val)
+                	#val = binascii.b2a_hex(ww)
+                	#val = binascii.unhexlify(val)
+                	#val = struct.unpack('f', val)[0]
+			#print "Batt=",float(val),"%"
+			#self.batt = float(val)
 			#return temperature
-                        return vv
+                        return tc,tmi,tma,bat
 
                 except BTLEException as e:
                         print "BT READ - BTLEException : {0}".format(e)
@@ -95,7 +110,7 @@ class TaskPrintTemp(threading.Thread):
 
     # compute mini and maxi values (Gene Cafe hack)
     # algoritm from evquink/RoastGenie (thank you!)
-    def addValSMEM(self, val):
+    def addValSMEM_old(self, val):
 	currentT = time.time()
 
 	#algorithm executed each 500ms minimum
@@ -130,15 +145,11 @@ class TaskPrintTemp(threading.Thread):
 
 	#do a 
 	while not self._stopevent.isSet(): 
-		#gather temperature, and loop every second
-            	val = binascii.b2a_hex(self.read())
-            	val = binascii.unhexlify(val)
-            	val = struct.unpack('f', val)[0]
-		print (time.asctime( time.localtime(time.time()) ) + " Temp=" + str(val))
-
-		#add value to shared memory
-		self.addValSMEM(val)
-
+		#read BLE values
+		tc,tmi,tma,bat = self.read()
+		print (time.asctime( time.localtime(time.time()) ) + " Temp=" + str(tc) + " Tmin=" + str(tmi) + " Tmax=" + str(tma) + " Batt=" + str(bat))
+		#upgrade data in shared memory 	
+		self.mData.setAllData(tc,tmi,tma,bat)
 		#wait a little
 		self._stopevent.wait(1) 
 
