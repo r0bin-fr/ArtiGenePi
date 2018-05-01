@@ -8,6 +8,9 @@ import signal
 import gaugette.rotary_encoder as RE
 import gaugette.gpio as GG
 
+from WRX_HUD.Hardware.SH1106.SH1106LCD import *
+from WRX_HUD.Hardware.I2CConfig import *
+from WRX_HUD.Hardware.SH1106.SH1106FontLib import *
 
 # global values for data handling
 maximT = readBT.BTData(0)
@@ -17,8 +20,8 @@ done = False
 
 #encoder data
 powval = 50
-A_PIN = 7
-B_PIN = 9
+A_PIN = 25
+B_PIN = 24
 
 #how to quit application nicely
 def quitApplicationNicely():
@@ -43,8 +46,23 @@ taskS.start()
 
 #encoder settings
 gpio = GG.GPIO()
-encoder = RE.RotaryEncoder(gpio, A_PIN, B_PIN)
+encoder = RE.RotaryEncoder(gpio, A_PIN, B_PIN,0)
 encoder.start()
+
+#OLED screen
+i2cConfig()
+lcd = SH1106LCD()
+lcd.clearScreen()
+lcd.displayInvertedString("----- ArtiGene ------", 0, 0)
+
+def refreshScreen():
+
+	tc,tmi,tma,bat = maximT.getAllData()
+	lcd.displayString("Temp="+str(tc)+"C   ",	1,0)
+	lcd.displayString("TempMin="+str(tmi)+"C   ",	2,0)
+	lcd.displayString("TempMax="+str(tma)+"C   ",	3,0)
+	lcd.displayString("Batt="+str(bat)+"%   ",	4,0)
+	lcd.displayString("Power="+str(powval)+"%   ",	5,0)
 
 # -------- Main Program: check encoder settings  -----------
 while True:
@@ -63,6 +81,7 @@ while True:
 		#update PWM to SSR
 		SSRControl.setBoilerPWM(powval)		
       	else:
+		refreshScreen()
         	time.sleep(0.1)
 
 

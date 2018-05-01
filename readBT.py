@@ -22,6 +22,15 @@ class BTData:
 		self.batt = tba
 		self.lok.release()
 
+        def getAllData(self):
+                #protect concurrent access with mutex
+                self.lok.acquire()
+                tc = self.temp 
+                tmi = self.tempL 
+                tma = self.tempH 
+                tba = self.batt
+                self.lok.release()
+		return tc,tmi,tma,tba
 
 	def setTempL(self,temp):
 		#protect concurrent access with mutex
