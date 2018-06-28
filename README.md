@@ -1,5 +1,5 @@
 # artigene
-The aim of this project is to use Artisan roasting scope software (https://artisan-roasterscope.blogspot.com/) with a Gene Cafe CBR 101 (Coffee roaster) using a Raspberry Pi3, in order to enhance the roasting process and have more control on it. 
+The aim of this project is to use Artisan roasting scope software (https://artisan-roasterscope.blogspot.com/) with a Gene Cafe CBR 101 (Coffee roaster, http://genecafe.com/) using a Raspberry Pi3, in order to enhance the roasting process and have more control on it. 
 
 This implies realisation of a Bluetooth temperature sensor located in the drum, battery powered (inspired from www.roasthacker.com), make Raspberry get the temperature remotely, then pass it to Artisan roaster software through local network socket. 
 
