@@ -13,10 +13,11 @@ PORT = 60016              # Arbitrary non-privileged port
 
 class TaskServeur(threading.Thread): 
 
-    def __init__(self, mData = readBT.BTData()): 
+    def __init__(self, mData,sData): 
         threading.Thread.__init__(self) 
         self._stopevent = threading.Event( ) 
 	self.mData = mData
+	self.sData = sData
 	self.s = 0
 	self.conn = 0
 
@@ -49,11 +50,15 @@ class TaskServeur(threading.Thread):
 
         	try:
                 	self.conn, addr = self.s.accept()
-                	#print 'TaskServer loop2 - connected by', addr
+                	print 'TaskServer loop2 - connected by', addr
                 	#send temperature once and disconnect
-                	btemp = self.mData.getTempL()
-                	atemp = self.mData.getTempH()
-                	self.conn.sendall(str(atemp)+","+str(btemp))
+                	#btemp = self.mData.getTempL()
+                	#atemp = self.mData.getTempH()
+                	btemp = self.mData.getAccelX()
+                	atemp = self.mData.getAccelY()
+			#atemp = self.sData.get_temp()
+			heat = self.mData.getHeaterP()
+                	self.conn.sendall(str(atemp)+","+str(btemp)+","+str(heat))
 
 	        except socket.error as e:
         	        print "TaskServer loop2 - Socket error : {0}".format(e)
