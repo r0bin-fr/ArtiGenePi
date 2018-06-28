@@ -35,6 +35,7 @@ class TaskPrintTemp(threading.Thread):
 	self.lastValz = 0
 	self.lastDrive = 100
 	self.driveTime = 0
+	self.motorControl = 1
 	
     def disconnect(self):
 	if self.p != 0:
@@ -127,20 +128,43 @@ class TaskPrintTemp(threading.Thread):
     def updateMotorSpeed(self,az):
 	drive = 100
 
-	#or check when we are descending
+	#disable motor if needed
+	if( self.motorControl == 0):
+		drive = 0
+		print "MC0, setPWM=",drive
+		multithreadMotor.setMotorPWM(drive)
+		self.lastValz = az
+                self.lastDrive = drive
+                return 0
+
+	#return if no control set
+	if( self.motorControl == 1 ):
+		print "MC1, setMPWM=",drive
+		multithreadMotor.setMotorPWM(drive)
+		self.lastValz = az
+        	self.lastDrive = drive
+		return drive
+
+	print "MC2"
+	#motor control: 
+	#identify when we are descending
 	if((az < self.lastValz) or (az > 8)):
 		if(az > 0):
-			#reduce speed in another thread control
+			#reduce speed in another thread for better accuracy
 			if(self.lastDrive == 100):
+				print "ReduceSpeed, TaskRunMotor"
 				taskMotor = multithreadMotor.TaskRunMotor()
 				taskMotor.start()
-			drive = 30			
+			drive = 30
 
 	#backup val
 	self.lastValz = az
 	self.lastDrive = drive
 	return drive
 
+    #enable or disable motor control
+    def setMotorControl(self,ct):
+        self.motorControl = ct
 
     #main task body
     def run(self):

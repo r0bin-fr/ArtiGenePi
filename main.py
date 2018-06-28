@@ -1,6 +1,7 @@
 import readBT
 import multithreadBT
 import multithreadServeur
+import multithreadMotor
 import SSRControl
 import time
 import sys
@@ -29,11 +30,13 @@ myHeater = SSRControl.MyPWM()
 #motor data
 IN1_PIN = 17
 IN2_PIN = 27
+isMotorControl = 1
 
 #encoder data
 powval = 50
 A_PIN = 26#25
 B_PIN = 19#24
+SW_PIN = 22
 
 #how to quit application nicely
 def quitApplicationNicely():
@@ -42,7 +45,7 @@ def quitApplicationNicely():
 	taskT.stop()
 #	encoder.stop()
 	myHeater.setHeaterPWM(0)
-	SSRControl.setMotorPWM(100)
+	multithreadMotor.setMotorPWM(100)
 	time.sleep(0.1)
 	print "now exit"
         sys.exit(0)
@@ -62,7 +65,7 @@ taskS.start()
 #encoder settings
 #gpio = GG.GPIO()
 #encoder = RE.RotaryEncoder(gpio, A_PIN, B_PIN,0)
-encoder = myencoder.RotaryEncoder( A_PIN, B_PIN,0 )
+encoder = myencoder.RotaryEncoder( A_PIN, B_PIN,SW_PIN )
 encoder.start()
 
 #OLED screen
@@ -73,6 +76,8 @@ lcd.displayInvertedString("----- ArtiGene ------", 0, 0)
 
 #OLED paint func
 def refreshScreen():
+	global isMotorControl
+
 	tc,tmi,tma,bat = maximT.getAllData()
 	az = maximT.getAccelZ()
 	mp = maximT.getMotorP()
@@ -88,8 +93,15 @@ def refreshScreen():
 	#if(mp != None):
 	#	lcd.displayString("Motor="+str(mp)+"%    ",	7,0)
 	myTempSensor.read_temp()
-	lcd.displayString("ET temp="+str(myTempSensor.getTemp())+"C   ",6,0)
-
+	lcd.displayString("Probe temp="+str(myTempSensor.getTemp())+"C   ",6,0)
+	if(isMotorControl == 0):
+		lcd.displayString("Motor=OFF             ",7,0)
+	if(isMotorControl == 1):
+		lcd.displayString("Motor=ON control=OFF ",7,0)		
+	if(isMotorControl == 2):
+		lcd.displayString("Motor=ON control=ON  ",7,0)
+		
+	
 #L293D init
 def initMotorDrive():
 	GPIO.setmode(GPIO.BCM)
@@ -117,7 +129,15 @@ hemax = 12
 hemin = 0
 
 def main_controlHeater():
-	global powval
+	global powval,isMotorControl
+	#did we push the button?
+	if(encoder.get_bPushed() == True):
+		isMotorControl = isMotorControl+1
+		if(isMotorControl >= 3):
+			isMotorControl = 0
+		#update BT thread
+		taskT.setMotorControl(isMotorControl)
+		
 	#encoder read
 	delta = encoder.get_cycles() #get_steps()
 	#did we turn the encoder?
@@ -141,7 +161,8 @@ def main_controlHeater():
 
 # -------- Main Program: check encoder settings  -----------
 initMotorDrive()
-SSRControl.setMotorPWM(100,1)
+SSRControl
+multithreadMotor.setMotorPWM(100,1)
 myHeater.setHeaterPWM(100,1)
 
 while True:
