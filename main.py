@@ -83,23 +83,25 @@ def refreshScreen():
 	mp = maximT.getMotorP()
 	tmi2 = maximT.getAccelX()
 	tma2 = maximT.getAccelY()
-	lcd.displayString("TTemp="+str(tc)+"C   ",	1,0)
-	lcd.displayString("TMi="+str(tmi)+" - "+str(tmi2)+"   ",	2,0)
-	lcd.displayString("TMa="+str(tma)+" - "+str(tma2)+"   ",	3,0)
-	lcd.displayString("Batt="+str(bat)+"%   ",	4,0)
-	lcd.displayString("Heater="+str(powval)+"/12   ",	5,0)
-	#if(az != None):
-	#	lcd.displayString("aZ="+str(int(az))+"    ",	6,0)
-	#if(mp != None):
-	#	lcd.displayString("Motor="+str(mp)+"%    ",	7,0)
+	#lcd.displayString("TTemp="+str(tc)+"C   ",	1,0)
+	if(taskT.isBTNOK):
+		lcd.displayString("                     ",1,0)
+		lcd.displayString("   BT DISCONNECTED   ",2,0)
+		lcd.displayString("                     ",3,0)
+	else:
+		lcd.displayString("TMin="+str(tmi)+" - "+str(tmi2)+"   ",	1,0)
+		lcd.displayString("TMax="+str(tma)+" - "+str(tma2)+"   ",	2,0)
+		lcd.displayString("Batt="+str(bat)+"%   ",			3,0)
+	
+	lcd.displayString("Heater="+str(powval)+"/12   ",	4,0)
 	myTempSensor.read_temp()
-	lcd.displayString("Probe temp="+str(myTempSensor.getTemp())+"C   ",6,0)
+	lcd.displayString("Probe temp="+str(myTempSensor.getTemp())+"C   ",5,0)
 	if(isMotorControl == 0):
-		lcd.displayString("Motor=OFF             ",7,0)
+		lcd.displayInvertedString(" Motor=OFF             ",7,0)
 	if(isMotorControl == 1):
-		lcd.displayString("Motor=ON control=OFF ",7,0)		
+		lcd.displayInvertedString(" Motor=ON Control=OFF ",7,0)		
 	if(isMotorControl == 2):
-		lcd.displayString("Motor=ON control=ON  ",7,0)
+		lcd.displayInvertedString(" Motor=ON Control=ON  ",7,0)
 		
 	
 #L293D init

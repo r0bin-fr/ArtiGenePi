@@ -36,8 +36,10 @@ class TaskPrintTemp(threading.Thread):
 	self.lastDrive = 100
 	self.driveTime = 0
 	self.motorControl = 1
+	self.isBTNOK = 1
 	
     def disconnect(self):
+	self.isBTNOK = 1
 	if self.p != 0:
 		try:
                 	self.p.disconnect()
@@ -54,10 +56,10 @@ class TaskPrintTemp(threading.Thread):
 	accelx_uuid = UUID(0x0025)
 	accely_uuid = UUID(0x0026)
 	accelz_uuid = UUID(0x0027)
-	isBTNOK = 1
+	self.isBTNOK = 1
 
 	#connection...
-	while not self._stopevent.isSet() and isBTNOK:
+	while not self._stopevent.isSet() and self.isBTNOK:
 		try:
 			print("Connection...")
 			#my bluefruit address
@@ -71,7 +73,7 @@ class TaskPrintTemp(threading.Thread):
 			self.accelValx = self.p.getCharacteristics(uuid=accelx_uuid)[0]
 			self.accelValy = self.p.getCharacteristics(uuid=accely_uuid)[0]
 			self.accelValz = self.p.getCharacteristics(uuid=accelz_uuid)[0]
-			isBTNOK = 0
+			self.isBTNOK = 0
 
 		except BTLEException as e:
 			print "CONNECT - BTLEException : {0}".format(e)
@@ -131,7 +133,6 @@ class TaskPrintTemp(threading.Thread):
 	#disable motor if needed
 	if( self.motorControl == 0):
 		drive = 0
-		print "MC0, setPWM=",drive
 		multithreadMotor.setMotorPWM(drive)
 		self.lastValz = az
                 self.lastDrive = drive
@@ -139,20 +140,17 @@ class TaskPrintTemp(threading.Thread):
 
 	#return if no control set
 	if( self.motorControl == 1 ):
-		print "MC1, setMPWM=",drive
 		multithreadMotor.setMotorPWM(drive)
 		self.lastValz = az
         	self.lastDrive = drive
 		return drive
 
-	print "MC2"
 	#motor control: 
 	#identify when we are descending
 	if((az < self.lastValz) or (az > 8)):
 		if(az > 0):
 			#reduce speed in another thread for better accuracy
 			if(self.lastDrive == 100):
-				print "ReduceSpeed, TaskRunMotor"
 				taskMotor = multithreadMotor.TaskRunMotor()
 				taskMotor.start()
 			drive = 30
