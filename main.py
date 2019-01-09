@@ -10,6 +10,7 @@ import gaugette.rotary_encoder as RE
 #import gaugette.gpio as GG
 import RPi.GPIO as GPIO
 import myencoder
+import myplotly
 import readMaximSPI
 
 from WRX_HUD.Hardware.SH1106.SH1106LCD import *
@@ -23,6 +24,10 @@ myTempSensor = readMaximSPI.MaximSPI()
 taskT = multithreadBT.TaskPrintTemp(maximT)
 taskS = multithreadServeur.TaskServeur(maximT,myTempSensor)
 done = False
+isRoasterNotStarted = True
+
+#plotly data
+myplot = myplotly.MyPlotly(1)
 
 #for PWM/SSR
 myHeater = SSRControl.MyPWM()
@@ -76,7 +81,7 @@ lcd.displayInvertedString("----- ArtiGene ------", 0, 0)
 
 #OLED paint func
 def refreshScreen():
-	global isMotorControl
+	global isMotorControl,isRoasterNotStarted
 
 	tc,tmi,tma,bat = maximT.getAllData()
 	az = maximT.getAccelZ()
@@ -95,15 +100,24 @@ def refreshScreen():
 	
 	lcd.displayString("Heater="+str(powval)+"/12   ",	4,0)
 	myTempSensor.read_temp()
-	lcd.displayString("Probe temp="+str(myTempSensor.getTemp())+"C   ",5,0)
+	myProbeTemp = myTempSensor.getTemp()
+	lcd.displayString("Probe temp="+ str(myProbeTemp) +"C   ",5,0)
 	if(isMotorControl == 0):
 		lcd.displayInvertedString(" Motor=OFF             ",7,0)
 	if(isMotorControl == 1):
 		lcd.displayInvertedString(" Motor=ON Control=OFF ",7,0)		
 	if(isMotorControl == 2):
 		lcd.displayInvertedString(" Motor=ON Control=ON  ",7,0)
-		
-	
+
+	#udpate plotly only when roast is started
+	if(isRoasterNotStarted == False):
+		if(taskT.isBTNOK):
+			#if BT is disconnected, only update loval vals
+			myplot.update(0, 0, 0, myProbeTemp, powval)		
+		else:
+			myplot.update(tc, tmi, tma, myProbeTemp, powval)
+
+
 #L293D init
 def initMotorDrive():
 	GPIO.setmode(GPIO.BCM)
@@ -158,6 +172,10 @@ def main_controlHeater():
 		#update shared memory
 		maximT.setHeaterP(powval)		
       	else:
+		#initiate roast when first BT connection detected
+		if((taskT.isBTNOK == 0) and (isRoasterNotStarted)):
+			myplot.initTimeStamp()
+			isRoasterNotStarted = False
 		refreshScreen()
         	time.sleep(0.1)
 

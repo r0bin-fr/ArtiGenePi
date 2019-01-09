@@ -52,10 +52,10 @@ class TaskServeur(threading.Thread):
                 	self.conn, addr = self.s.accept()
                 	print 'TaskServer loop2 - connected by', addr
                 	#send temperature once and disconnect
-                	#btemp = self.mData.getTempL()
-                	#atemp = self.mData.getTempH()
-                	btemp = self.mData.getAccelX()
-                	atemp = self.mData.getAccelY()
+                	btemp = self.mData.getTempL()
+                	atemp = self.mData.getTempH()
+                	#btemp = self.mData.getAccelX()
+                	#atemp = self.mData.getAccelY()
 			#atemp = self.sData.get_temp()
 			heat = self.mData.getHeaterP()
                 	self.conn.sendall(str(atemp)+","+str(btemp)+","+str(heat))
