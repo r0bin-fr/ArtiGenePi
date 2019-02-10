@@ -48,9 +48,11 @@ def quitApplicationNicely():
 	done = True
 	taskS.stop()
 	taskT.stop()
+	myplot.closeStream()
 #	encoder.stop()
 	myHeater.setHeaterPWM(0)
 	multithreadMotor.setMotorPWM(100)
+	lcd.clearScreen()
 	time.sleep(0.1)
 	print "now exit"
         sys.exit(0)
@@ -68,8 +70,6 @@ taskT.start()
 taskS.start()
 
 #encoder settings
-#gpio = GG.GPIO()
-#encoder = RE.RotaryEncoder(gpio, A_PIN, B_PIN,0)
 encoder = myencoder.RotaryEncoder( A_PIN, B_PIN,SW_PIN )
 encoder.start()
 
@@ -82,12 +82,13 @@ lcd.displayInvertedString("----- ArtiGene ------", 0, 0)
 #OLED paint func
 def refreshScreen():
 	global isMotorControl,isRoasterNotStarted
-
+#	print "rs1"
 	tc,tmi,tma,bat = maximT.getAllData()
 	az = maximT.getAccelZ()
 	mp = maximT.getMotorP()
 	tmi2 = maximT.getAccelX()
 	tma2 = maximT.getAccelY()
+#	print "rs2"
 	#lcd.displayString("TTemp="+str(tc)+"C   ",	1,0)
 	if(taskT.isBTNOK):
 		lcd.displayString("                     ",1,0)
@@ -97,7 +98,7 @@ def refreshScreen():
 		lcd.displayString("TMin="+str(tmi)+" - "+str(tmi2)+"   ",	1,0)
 		lcd.displayString("TMax="+str(tma)+" - "+str(tma2)+"   ",	2,0)
 		lcd.displayString("Batt="+str(bat)+"%   ",			3,0)
-	
+#	print "rs3"
 	lcd.displayString("Heater="+str(powval)+"/12   ",	4,0)
 	myTempSensor.read_temp()
 	myProbeTemp = myTempSensor.getTemp()
@@ -108,14 +109,16 @@ def refreshScreen():
 		lcd.displayInvertedString(" Motor=ON Control=OFF ",7,0)		
 	if(isMotorControl == 2):
 		lcd.displayInvertedString(" Motor=ON Control=ON  ",7,0)
+#	print "rs4"
 
 	#udpate plotly only when roast is started
 	if(isRoasterNotStarted == False):
 		if(taskT.isBTNOK):
 			#if BT is disconnected, only update loval vals
-			myplot.update(0, 0, 0, myProbeTemp, powval)		
+			myplot.update(0, 0, 0, myProbeTemp, powval, 0)		
 		else:
-			myplot.update(tc, tmi, tma, myProbeTemp, powval)
+			myplot.update(tc, tmi, tma, myProbeTemp, powval, az)
+#	print "rs5"
 
 
 #L293D init
@@ -145,7 +148,7 @@ hemax = 12
 hemin = 0
 
 def main_controlHeater():
-	global powval,isMotorControl
+	global powval,isMotorControl,isRoasterNotStarted
 	#did we push the button?
 	if(encoder.get_bPushed() == True):
 		isMotorControl = isMotorControl+1
@@ -189,7 +192,6 @@ while True:
 	main_controlHeater()
 	#main_controlMotor()
 
-	
 
 #old func for test only
 def main_controlMotor():
