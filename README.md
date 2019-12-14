@@ -12,5 +12,5 @@ In addition, I use an SSR on the heater in order to be able to dim the heat powe
 - client.py: program called by Artisan. it connects to the socket and retrieves temperature, then prints it once (called each second by Artisan)
 
 More info on the project here: 
-http://expresso.cultureforum.net/t12319-utiliser-la-gene-cafe-avec-artisan-le-roaster-connecte or http://expresso.1fr1.net/t12319-utiliser-la-gene-cafe-avec-artisan-le-roaster-connecte
+http://expresso.1fr1.net/t12319-utiliser-la-gene-cafe-avec-artisan-le-roaster-connecte or http://expresso.1fr1.net/t12319-utiliser-la-gene-cafe-avec-artisan-le-roaster-connecte
 
